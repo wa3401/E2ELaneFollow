@@ -16,8 +16,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
 import matplotlib.pyplot as plt
-from model import NvidiaModel
-from driveData import DriveData
+from model1 import NvidiaModel
+from driveData1 import DriveData
 #from torch.utils.tensorboard import SummaryWriter
 
 #If a cuda device is avaiable, set that as device
