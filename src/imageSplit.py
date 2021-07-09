@@ -1,3 +1,9 @@
+'''
+@author Will Anderson
+
+This file takes a full folder of images and splits them on an 80-10-10 split between training, testing, and validation and stores them in a new directory
+'''
+
 from pandas.core.frame import DataFrame
 import torch
 import torch.nn as nn
