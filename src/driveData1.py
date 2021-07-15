@@ -23,10 +23,8 @@ class DriveData(Dataset):
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 1])
         #print(img_path)
-        image = cv.imread(img_path)
-        image = cv.cvtColor(image, cv.COLOR_BGR2YUV)
-        image = cv.GaussianBlur(image, (3,3), 0)
-        image = cv.resize(image, (200, 75))
+        startImage = cv.imread(img_path)
+        image = cv.cvtColor(startImage, cv.COLOR_RGB2GRAY)
         label = torch.tensor(self.img_labels.iloc[idx, 2], dtype=torch.float32)
         if self.transform:
             image = self.transform(image)

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.adam import Adam
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torchvision.transforms as transforms
@@ -11,14 +12,15 @@ from model1 import NvidiaModel
 from driveData1 import DriveData
 import optuna
 from optuna.trial import TrialState
+from driveEdgeData import DriveEdgeData
+from ryanModel import RyanModel
 
 # If a cuda device is avaiable, set that as device
 DEVICE = ('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define Transforms
 transform1 = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    [transforms.ToTensor()]
 )
 
 transform2 = transforms.Compose(
@@ -27,38 +29,39 @@ transform2 = transforms.Compose(
 
 
 def objective(trial):
-    model = NvidiaModel().to(DEVICE)
+    model = RyanModel().to(DEVICE)
 
-    num_epochs = trial.suggest_int("num_epochs", 25, 500)
-    batch_size = trial.suggest_int("batch_size", 4, 128)
-    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "SGD"])
+    num_epochs = trial.suggest_int("num_epochs", 100, 350)
+    batch_size = trial.suggest_int("batch_size", 8, 128)
+    
     lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
-    optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
+    optimizer = Adam(model.parameters(), lr=lr)
 
     criterion = nn.MSELoss()
 
 
     # Define Train Dataset
-    train_dir = '/home/williamanderson/driveImages/trainImages/'
+    train_dir = '/home/williamanderson/procDriveImages/trainImages/'
     train_csv = train_dir + 'train.csv'
     train_set = DriveData(annotations_file=train_csv,
                         img_dir=train_dir, transform=transform1)
     train_dataloader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # Define test dataset
-    test_dir = '/home/williamanderson/driveImages/testImages/'
+    test_dir = '/home/williamanderson/procDriveImages/testImages/'
     test_csv = test_dir + 'test.csv'
     test_set = DriveData(annotations_file=test_csv,
                         img_dir=test_dir, transform=transform1)
     test_dataloader = DataLoader(test_set, batch_size=batch_size, shuffle=True)
 
     # Define validation dataset
-    val_dir = '/home/williamanderson/driveImages/valImages/'
+    val_dir = '/home/williamanderson/procDriveImages/valImages/'
     val_csv = val_dir + 'val.csv'
-    val_set = DriveData(annotations_file=val_csv,
+    val_set = DriveEdgeData(annotations_file=val_csv,
                         img_dir=val_dir, transform=transform1)
     val_dataloader = DataLoader(val_set, batch_size=batch_size, shuffle=True)
 
+    #Training Loop
     for epoch in range(num_epochs):
         train_loss = 0.0
         model.train()
@@ -82,6 +85,8 @@ def objective(trial):
             
             train_loss = loss.item() * images.size(0)
             
+        #scheduler.step()
+        #train_loss_graph.append(loss.item())
 
         valid_loss = 0.0
         model.eval()
@@ -97,8 +102,11 @@ def objective(trial):
             loss = criterion(outputs, labels)
 
             valid_loss = loss.item() * images.size(0)
+            
             #writer.add_scalar('Validation Loss', valid_loss, global_step=step)
             #step += 1
+        #val_loss_graph.append(valid_loss)
+        #val_idx_graph.append(i * 7.7)
 
         with torch.no_grad():
             model.eval()
@@ -123,6 +131,9 @@ def objective(trial):
             #print(f'Num Correct: {n_correct}')
             acc = 100.0 * n_correct / n_samples
             print(f'Accuracy for the network: {acc:.4f} %')
+        
+
+        
 
         print(f'Epoch {epoch+1} \t\t Training Loss: {train_loss / len(train_dataloader)} \t\t Validation Loss: {valid_loss / len(val_dataloader)}')
         trial.report(acc, epoch)
@@ -134,7 +145,7 @@ def objective(trial):
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100,timeout=600)
+    study.optimize(objective, n_trials=200)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
     complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])

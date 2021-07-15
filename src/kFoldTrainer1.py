@@ -15,6 +15,8 @@ import fnmatch
 from driveData1 import DriveData
 from torch.utils.data import DataLoader
 from model1 import NvidiaModel
+from driveEdgeData import DriveEdgeData
+from ryanModel import RyanModel
 
 
 def reset_weights(m):
@@ -32,7 +34,7 @@ if __name__ == '__main__':
 
     # Configuration options
     k_folds = 10
-    num_epochs = 5
+    num_epochs = 50
     loss_function = nn.MSELoss()
 
     # For fold results
@@ -42,14 +44,13 @@ if __name__ == '__main__':
     torch.manual_seed(42)
 
     transform1 = transforms.Compose(
-    [transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    [transforms.ToTensor()]
 )
 
     # Prepare MNIST dataset by concatenating Train/Test part; we split later.
     data_dir = '/home/williamanderson/kFold/'
     data_csv = data_dir + 'data.csv'
-    dataset = DriveData(annotations_file=data_csv, img_dir=data_dir, transform=transform1)
+    dataset = DriveEdgeData(annotations_file=data_csv, img_dir=data_dir, transform=transform1)
 
     # Define the K-fold Cross Validator
     kfold = KFold(n_splits=k_folds, shuffle=True)
@@ -77,7 +78,7 @@ if __name__ == '__main__':
             batch_size=64, sampler=test_subsampler)
 
         # Init the neural network
-        network = NvidiaModel()
+        network = RyanModel()
         network.apply(reset_weights)
 
         # Initialize optimizer
