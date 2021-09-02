@@ -1,3 +1,4 @@
+![Kfold Pic](https://user-images.githubusercontent.com/69916271/131913673-7aaff8b1-4a2d-42ec-bcb1-54fe80ed7763.png)
 # End-To-End Lane Following
 
 This package was an attempt to solve the issue of lane following using just a convolutional Neural Network
